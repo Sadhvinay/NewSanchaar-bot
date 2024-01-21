@@ -1,19 +1,19 @@
-// server.mjs
 import express from 'express';
 import bodyParser from 'body-parser';
 import { PythonShell } from 'python-shell';
+import cors from 'cors';
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(express.json()); // Use express.json() instead of json()
+app.use(cors());
+app.use(express.json());
 
 app.post('/api/chatbot', (req, res) => {
   const userMessage = req.body.message;
 
-  // Run the Python script with user input
   const options = {
-    scriptPath: './',  // Adjust this path based on your project structure
+    scriptPath: './',
     args: [userMessage],
   };
 

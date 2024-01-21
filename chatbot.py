@@ -2,7 +2,7 @@ import openai
 import numpy as np
 
 # Set your OpenAI API key
-openai.api_key = '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'  # Replace with your actual API key
+openai.api_key = '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'  # Replace with your actual API key
 
 # Function to create ADA embeddings (with caching)
 def create_ada_embeddings(prompts, cache={}):

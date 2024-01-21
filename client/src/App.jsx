@@ -1,23 +1,32 @@
-// src/App.js
 import React, { useState } from 'react';
 import './App.css';
 
 function App() {
   const [userInput, setUserInput] = useState('');
   const [chatbotResponse, setChatbotResponse] = useState('');
+  const apiUrl = 'http://localhost:5000/api/chatbot';
 
   const handleSubmit = async () => {
-    // Send user input to the backend
-    const response = await fetch('http://localhost:5000/api/chatbot', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message: userInput }),
-    });
+    try {
+      // Send user input to the backend
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: userInput }),
+      });
 
-    const data = await response.json();
-    setChatbotResponse(data.response);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      setChatbotResponse(data.response);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // Handle error gracefully, e.g., display an error message to the user
+    }
   };
 
   return (
