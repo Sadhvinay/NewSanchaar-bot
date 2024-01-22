@@ -111,7 +111,7 @@ def collect_issue(issue):
     issue_collection = db["Issues"]
 
     # Create a document to insert into the collection
-    issue_data = {"issue": issue}
+    issue_data = {"issue": issue, "rollno": 1234}
 
     # Insert the document into the 'Feedback' collection
     issue_collection.insert_one(issue_data)
