@@ -1,18 +1,17 @@
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.chains import LLMChain
-from langchain import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.memory import ConversationBufferMemory
 from langchain_openai import OpenAIEmbeddings
-from langchain_openai import ChatOpenAI
-import openai
+from langchain.memory import ConversationBufferMemory
+from langchain_community.document_loaders import WebBaseLoader
+from textblob import TextBlob
 from pymongo import MongoClient
 import os
 
 # Set your OpenAI API key as an environment variable
-os.environ["OPENAI_API_KEY"] = ''
+os.environ["OPENAI_API_KEY"] = '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'
 
 def process_text(text):
     # Split the text into chunks using Langchain's CharacterTextSplitter
@@ -34,18 +33,28 @@ def retriever(query):
     docs = knowledgebase.similarity_search(query)
     return docs
 
-def store_feedback(query, response, additional_data):
+def store_feedback(query, response):
     feedback_data = {
         "query": query,
-        "response": response,
-        "other_data": additional_data,
+        "response": response
     }
-    collection.insert_one(feedback_data)
+    feedback_collection.insert_one(feedback_data)
     print("Feedback stored in MongoDB.")
 
-with open("ngit.txt", 'r', encoding='utf-8') as file:
-    text = file.read()
-    knowledgebase = process_text(text)
+def store_issue(query, response):
+    issue_data = {
+        "query": query,
+        "response": response
+    }
+    issues_collection.insert_one(issue_data)
+    print("Issue stored in MongoDB.")
+
+# Use WebBaseLoader to load data from the specified URL
+loader = WebBaseLoader("https://ngit.ac.in/")
+data = loader.load()
+
+# Process the loaded data
+knowledgebase = process_text(str(data))
 
 conversational_memory = ConversationBufferMemory(
     memory_key="chat_history",
@@ -86,16 +95,14 @@ try:
                                serverSelectionTimeoutMS=30000)  # 30 seconds
 
     db = mongo_client["sanchaar_data"]
-    collection = db["Feedbacks"]
+    feedback_collection = db["Feedbacks"]  # Corrected collection assignment
+    issues_collection = db["Issues"]
 
     print("Connected to MongoDB Atlas successfully.")
 except Exception as e:
     print(f"Error connecting to MongoDB Atlas: {e}")
 
-
-    print("Connected to MongoDB Atlas successfully.")
-except Exception as e:
-    print(f"Error connecting to MongoDB Atlas: {e}")
+# ...
 
 def main():
     print("Welcome to the University Chatbot!")
@@ -108,18 +115,36 @@ def main():
         if user_query.lower() in ['exit', 'quit', 'bye']:
             print("Goodbye!")
             break
+        
+        collection_fn = None
 
         # Check if the query starts with 'feedback:'
         if user_query.lower().startswith('feedback:'):
-            # Get feedback response
-            feedback_response = input("Please provide feedback: ")
-            store_feedback(user_query, feedback_response, "Additional data for feedback")
-            print("Feedback stored in MongoDB.")
-        else:
-            # Run the language model chain
-            chat_context = retriever(user_query)
-            bot_response = chain_general.run(query=user_query, context=chat_context)
-            print("Bot:", bot_response)
+            user_query = user_query.removeprefix('feedback:').strip()
+            collection_fn = store_feedback
+        elif user_query.lower().startswith('issue:'):
+            user_query = user_query.removeprefix('issue:').strip()
+            collection_fn = store_issue
+            
+        print(user_query)
+        
+        # Run the language model chain
+        chat_context = retriever(user_query)
+        bot_response = chain_general.run(query=user_query, context=chat_context)
+        print("Bot:", bot_response)
+        
+        if collection_fn is not None:
+            collection_fn(user_query, bot_response)
+        
+        #     # Get feedback response
+        #     # feedback_response = input("Please provide feedback: ")
+        #     store_feedback(user_query, bot_response)
+        #     print("Feedback stored in MongoDB.")
+        # elif user_query.lower().startswith('issue:'):
+        #     # issue_response = input("Please provide issue: ")
+        #     store_issue(user_query, issue_response, "Other issue data")
+        #     print("Issue stored in MongoDB.")
+        # else:
 
 if __name__ == "__main__":
     main()

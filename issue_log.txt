@@ -1,0 +1,9 @@
+Issue: Project school is too bad.
+Response: What do I do then?
+
+Issue: project school is too bad.
+Response: What do I do then.
+
+Issue: What is meant by fuck?
+Response: what is meant bu sex?
+
